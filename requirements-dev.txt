@@ -1,0 +1,5 @@
+-r requirements.txt
+pytest>=8
+pyinstaller>=6.3
+reportlab>=4        # only needed to regenerate docs/PROJECT_REPORT.pdf
+Pillow>=10          # only needed to regenerate the icon

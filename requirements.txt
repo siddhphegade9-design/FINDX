@@ -1,0 +1,6 @@
+# Runtime dependencies (tested with the versions noted in README.md)
+PySide6>=6.6,<7
+sympy>=1.12,<2
+numpy>=1.26,<3
+scipy>=1.11,<2
+matplotlib>=3.8,<4

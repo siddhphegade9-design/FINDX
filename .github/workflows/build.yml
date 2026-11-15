@@ -1,0 +1,51 @@
+New-Item -ItemType Directory -Force .github\workflows | Out-Null
+@'
+name: Test and build FINDX.exe
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+      - name: Run tests
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python -m pytest
+      - name: Build FINDX.exe
+        run: pyinstaller packaging/FINDX.spec --noconfirm --clean
+      - name: Self-test the packaged executable
+        env:
+          QT_QPA_PLATFORM: offscreen
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath "dist/FINDX/FINDX.exe" -ArgumentList "--selftest" -Wait -PassThru
+          Get-Content "$env:TEMP/findx_selftest.txt"
+          if ($p.ExitCode -ne 0) { throw "Packaged self-test failed" }
+      - name: Zip distribution
+        shell: pwsh
+        run: Compress-Archive -Path dist/FINDX -DestinationPath FINDX-windows.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FINDX-windows
+          path: FINDX-windows.zip
+      - name: Publish release (tags only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: FINDX-windows.zip
+'@ | Set-Content -Encoding utf8 .github\workflows\build.yml
